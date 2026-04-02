@@ -1,0 +1,35 @@
+name: Prompt Testing
+
+on:
+  workflow_dispatch:
+
+jobs:
+  prompt-test:
+    name: Run Prompt Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run prompt tests
+        run: npx nx test:prompt interpret-service
+        env:
+          AI_GEMINI_API_KEY: ${{ secrets.AI_GEMINI_API_KEY }}
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prompt-test-results
+          path: coverage/apps/interpret-service/prompts/

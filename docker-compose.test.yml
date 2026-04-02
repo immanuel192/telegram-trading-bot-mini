@@ -1,0 +1,44 @@
+version: "3.3"
+
+# Docker Compose file for CI test environment
+# This file is used in conjunction with docker-compose.yml to create an isolated test environment
+# Usage:
+#   Local testing: docker compose -f docker-compose.yml -f docker-compose.test.yml up -d
+#   CI: Same command runs inside GitHub Actions
+# The test-runner service provides a Node.js environment with all dependencies mounted
+
+services:
+  test-runner:
+    image: node:20.19.5
+    container_name: test-runner
+    working_dir: /app
+    volumes:
+      - .:/app
+    networks:
+      - telegram-trading-bot
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      upstash-serverless-redis-http:
+        condition: service_started
+    environment:
+      # CI flag to enable environment detection
+      CI: "true"
+      # Node environment
+      NODE_ENV: test
+      # MongoDB connection (using service name for Docker network)
+      MONGODB_URI: mongodb://mongo:27017/?replicaSet=rs0&directConnection=true
+      MONGODB_DBNAME: telegram-trading-bot-test
+      # Redis connection - Use NATIVE Redis for ioredis (not Upstash HTTP)
+      # ioredis cannot connect to HTTP endpoints, it needs redis:// protocol
+      REDIS_URL: redis://redis:6379
+      # AI Gemini API Key for integration tests (passed from CI secrets)
+      AI_GEMINI_API_KEY: ${AI_GEMINI_API_KEY:-fake-gemini-key}
+    # Keep container running for exec commands
+    command: tail -f /dev/null
+
+networks:
+  telegram-trading-bot:
+    driver: bridge

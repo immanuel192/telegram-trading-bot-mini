@@ -1,0 +1,33 @@
+Now we need to generate the rules and prompt for hang-moon 
+
+- Read the sample prompt from trader-thuc-chien which we can do the same @prompt.txt and the test @prompt-groq-llama-instant.spec.ts 
+- We will use instant model first, see how it go, otherwise will go with maverick later
+
+Your tasks
+- Read first 300 lines of @sample-data.json 
+- Understand the structure and the rules and the patterns
+- Generate a markdown file in @hang-moon to define all the patterns that we found, input, output and its example
+- Then attempt to generate prompt.txt file for me using the decisions-tree approach. Remember assume the model is very limited ability, MMLU 69%.
+
+Some of patterns that I observed
+- symbol is always XAUUSD
+- isImmediate is always true, always market order
+
+Enter trade pattern
+- Usually they will enter 2 trades in 2 different messages, come in one after another, and usually after a few secs. 
+- They are also enter multiple orders together (NOT sure if that is DCA). They mention order in quotedMessage so that we know which one is which.
+- When they say "Gold buy now" or "Gold sell now", that will be the first trade => we will classify as command = LONG/SHORT, entry = null, stopLoss = null, isLinkedWithPrevious=false. For this type of command, we dont take the quotedMessage , quotedFirstMessage and prevMessage into account.
+- Then come with the next message usually in this format "💥GOLD Buy 4091- 4089\n\n✅TP  4094\n✅TP  4111\n\n💢SL  4086" or "💥GOLD Sell 4039- 4041\n\n✅TP  4036\n✅TP  4019\n\n💢SL  4044"  => this will be 2nd trade that should link with previous one that is in prevMessage. For this type of message, entry = null as well (since all market trade), isLinkedWithPrevious = true, and extract takeProfits as well as stopLoss
+
+General information
+- "@Gold +150 Pips running ✅🚀" => just to inform that the trade is running
+- "GOLD - TP HIT 30 +Pips ✅✅" => Same, to inform TP hit
+- "ready signal"
+- "Lên 69 xuống 66 2 vòng rồi. Ae vào được ko"
+- "Sập nào. Nhây mãi 😊"
+
+Close orders
+- "Close 11.6 holx 09.6" => command = CLOSE_BAD_POSITION
+- "SL hit" => command = CLOSE_ALL
+
+

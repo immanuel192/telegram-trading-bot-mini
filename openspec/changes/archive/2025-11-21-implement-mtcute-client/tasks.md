@@ -1,0 +1,57 @@
+# Tasks: Implement mtcute Client
+
+- [x] Install `mtcute` dependencies
+  - `@mtcute/node`
+  - `@mtcute/core`
+- [x] Define `TelegramConfig` interface in `apps/telegram-service/src/types.ts`
+  - Add `apiId`, `apiHash`, `session`, `chats`
+- [x] Create Session Capture Script in `apps/telegram-service`
+  - Standalone script using `mtcute`
+  - Prompt for `API_ID`, `API_HASH`, `PHONE`
+  - Handle OTP flow
+  - Output session string
+  - Add `capture-session` script to `package.json`
+- [x] Implement DAL Models
+  - [x] `Config` model (collection: `configs`)
+    - Fields: `key` (indexed), `value`
+  - [x] `TelegramChannel` model (collection: `telegram-channels`)
+    - Fields: `channelCode` (unique), `url`, `channelId`, `accessHash`, `createdOn`, `isActive` (indexed)
+    - Indexes: `channelCode`, `isActive`, `channelId`+`accessHash`
+  - [x] `TelegramMessage` model (collection: `telegram-messages`)
+    - Fields: `channelCode`, `messageId`, `message`, `quotedMessage`, `prevMessage`, `sentAt`, `receivedAt`, `deletedAt`, `meta`
+    - Indexes: `channelCode`, `messageId`, `channelCode`+`messageId`, `sentAt`, `receivedAt`, `deletedAt`
+    - TTL: 30 days
+- [x] Setup `apps/telegram-service` Structure
+  - [x] `main.ts`: Entry point, DB connection, Sentry init, start service
+  - [x] `server.ts`: Fastify app with `/healthcheck`
+- [x] Update `TelegramClientService`
+  - [x] Implement `connect()` (load session from DB)
+  - [x] Implement `resolveChannels()` (load active channels to memory)
+  - [x] Implement `disconnect()`
+  - [x] Implement `getMe()`
+- [x] Implement Message Processing
+  - [x] Create in-memory `Queue` per active channel (using `@libs/shared/utils`)
+  - [x] Implement `onMessage` handler
+    - [x] Filter by in-memory active channels
+    - [x] Push to channel queue
+  - [x] Implement Queue Worker
+    - [x] Extract fields including `sentAt` (from msg) and `receivedAt` (Date.now())
+    - [x] Populate `quotedMessage` (DB lookup)
+    - [x] Populate `prevMessage` (DB lookup)
+    - [x] Save to `TelegramMessage` collection
+    - [x] Push to Redis Stream
+    - [x] Handle errors with Sentry
+- [x] Implement Message Deletion Handler
+  - [x] Update `deletedAt` in `TelegramMessage` collection
+- [x] Create Session Capture Script
+  - Standalone script using `mtcute`
+  - Handle OTP flow
+  - Output session string
+- [x] Add Integration Tests
+  - Use Docker Compose (stack:up) for dependencies (MongoDB, Redis)
+  - Global mock for Sentry
+  - Verify:
+    - Connection flow
+    - Channel resolution
+    - Message reception, persistence (check `sentAt`/`receivedAt`), and stream publishing
+    - Error handling (Sentry capture)

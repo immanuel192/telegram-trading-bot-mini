@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test-and-build:
+    name: Test and Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            node-modules-
+
+      - name: Cache Nx
+        uses: actions/cache@v4
+        with:
+          path: .nx/cache
+          key: nx-${{ hashFiles('**/package-lock.json') }}-${{ github.sha }}
+          restore-keys: |
+            nx-${{ hashFiles('**/package-lock.json') }}-
+
+      - name: Start Docker services
+        run: docker compose -f docker-compose.yml up -d
+
+      - name: Wait for services
+        run: sleep 10 # Basic wait to let images pull and containers start
+
+      - name: Start Test Runner
+        run: docker compose -f docker-compose.yml -f docker-compose.test.yml up -d test-runner
+        env:
+          AI_GEMINI_API_KEY: ${{ secrets.AI_GEMINI_API_KEY }}
+
+      - name: Run Tests
+        run: docker compose -f docker-compose.yml -f docker-compose.test.yml exec -T test-runner /app/.github/scripts/run-tests.sh
+
+      - name: Stop Services
+        if: always()
+        run: docker compose -f docker-compose.yml -f docker-compose.test.yml down
+
+  deploy:
+    name: Deploy
+    needs: [test-and-build]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Deploy (Placeholder)
+        run: |
+          echo "Deployment step placeholder"
+          echo "Future: Deploy to production environment"

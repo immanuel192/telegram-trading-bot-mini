@@ -1,0 +1,58 @@
+version: "3.3"
+services:
+  mongo:
+    image: mongo
+    restart: always
+    networks:
+      - telegram-trading-bot
+    ports:
+      - 27017:27017
+    command: ["--replSet", "rs0", "--bind_ip_all", "--oplogSize", "128"]
+    volumes:
+      - ./infra/mongo/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    healthcheck:
+      test: mongosh --eval "try { rs.isMaster().ismaster } catch(e) { false }" --quiet
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  mongo-express:
+    image: mongo-express
+    restart: always
+    networks:
+      - telegram-trading-bot
+    ports:
+      - 9081:8081
+    environment:
+      ME_CONFIG_MONGODB_URL: mongodb://mongo:27017/
+      ME_CONFIG_BASICAUTH: "false"
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    networks:
+      - telegram-trading-bot
+    ports:
+      - 6379:6379
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+
+  upstash-serverless-redis-http:
+    ports:
+      - "8000:80"
+    image: hiett/serverless-redis-http:latest
+    networks:
+      - telegram-trading-bot
+    environment:
+      SRH_MODE: env
+      SRH_TOKEN: fake-token
+      SRH_CONNECTION_STRING: "redis://redis:6379" # Using `redis` hostname since they're in the same Docker n
+
+networks:
+  telegram-trading-bot:
+    driver: bridge
+
+volumes:
+  redis-data:

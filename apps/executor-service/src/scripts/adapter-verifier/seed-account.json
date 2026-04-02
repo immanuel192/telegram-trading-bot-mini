@@ -1,0 +1,37 @@
+{
+  "accountId": "test-oanda-account",
+  "description": "Test account for adapter verification",
+  "isActive": true,
+  "telegramChannelCode": "test-channel",
+  "accountType": "api",
+  "promptId": "test-prompt",
+  "brokerConfig": {
+    "exchangeCode": "oanda",
+    "apiKey": "your-api-key",
+    "apiSecret": "",
+    "isSandbox": true,
+    "accountId": "101-011-30127491-003",
+    "unitsPerLot": 1,
+    "minLotSize": 1,
+    "maxLotSize": 1000000,
+    "lotStepSize": 1
+  },
+  "configs": {
+    "closeOppositePosition": true,
+    "defaultMaxRiskPercentage": 2,
+    "defaultLotSize": 100,
+    "addOnStopLossPercentForAdjustEntry": 0.1,
+    "forceStopLossByPercentage": 0.02
+  },
+  "symbols": {
+    "XAUUSD": {
+      "forceStopLossByPercentage": 0.02,
+      "pickBestEntryFromZone": false,
+      "pickBestEntryFromZoneDelta": 0.5,
+      "maxRiskPercentage": 3,
+      "defaultLotSize": 100
+    }
+  },
+  "balance": 10000,
+  "balanceUpdatedAt": "2026-01-01T00:00:00.000Z"
+}

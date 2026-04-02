@@ -1,0 +1,116 @@
+{
+  "name": "executor-service",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/executor-service/src",
+  "projectType": "application",
+  "tags": [
+    "type:app",
+    "scope:executor"
+  ],
+  "implicitDependencies": [
+    "shared-utils"
+  ],
+  "targets": {
+    "build": {
+      "executor": "@nx/esbuild:esbuild",
+      "outputs": [
+        "{options.outputPath}"
+      ],
+      "defaultConfiguration": "production",
+      "options": {
+        "platform": "node",
+        "outputPath": "dist/apps/executor-service",
+        "format": [
+          "cjs"
+        ],
+        "bundle": false,
+        "main": "apps/executor-service/src/main.ts",
+        "tsConfig": "apps/executor-service/tsconfig.app.json",
+        "generatePackageJson": true,
+        "esbuildConfig": "libs/esbuild.config.common.ts"
+      },
+      "configurations": {
+        "development": {},
+        "production": {}
+      }
+    },
+    "prune-lockfile": {
+      "dependsOn": [
+        "build"
+      ],
+      "cache": true,
+      "executor": "@nx/js:prune-lockfile",
+      "outputs": [
+        "{workspaceRoot}/dist/apps/executor-service/package.json",
+        "{workspaceRoot}/dist/apps/executor-service/package-lock.json"
+      ],
+      "options": {
+        "buildTarget": "build"
+      }
+    },
+    "copy-workspace-modules": {
+      "dependsOn": [
+        "build"
+      ],
+      "cache": true,
+      "outputs": [
+        "{workspaceRoot}/dist/apps/executor-service/workspace_modules"
+      ],
+      "executor": "@nx/js:copy-workspace-modules",
+      "options": {
+        "buildTarget": "build"
+      }
+    },
+    "prune": {
+      "dependsOn": [
+        "prune-lockfile",
+        "copy-workspace-modules"
+      ],
+      "executor": "nx:noop"
+    },
+    "serve": {
+      "continuous": true,
+      "executor": "@nx/js:node",
+      "defaultConfiguration": "development",
+      "dependsOn": [
+        "build"
+      ],
+      "options": {
+        "buildTarget": "executor-service:build",
+        "runBuildTargetDependencies": false
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "executor-service:build:development"
+        },
+        "production": {
+          "buildTarget": "executor-service:build:production"
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": [
+        "{options.outputFile}"
+      ]
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": [
+        "{workspaceRoot}/coverage/{projectRoot}"
+      ],
+      "options": {
+        "jestConfig": "apps/executor-service/jest.config.ts",
+        "passWithNoTests": true,
+        "runInBand": true
+      }
+    },
+    "adapter-verifier": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx tsx --tsconfig tsconfig.base.json apps/executor-service/src/scripts/adapter-verifier/index.ts",
+        "interactive": true
+      }
+    }
+  }
+}
